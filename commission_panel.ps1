@@ -167,13 +167,31 @@ if ($IsRooted) {
     }
 }
 
-if ($IsRooted -or $HasSu) {
-
-    # ── Remount ───────────────────────────────────────────────────────────────
-
+# Determine whether the system partition can be made writable.
+# Tries /system first (separate partition), then / (system-as-root).
+$CanWriteSystem = $false
+if ($IsRooted) {
     Step "Remounting /system as writable"
-    if ($IsRooted) { Adb "remount" } else { SuShell "mount -o rw,remount /system" }
+    Adb "remount"
+    $CanWriteSystem = $true
     Start-Sleep -Seconds 2
+} elseif ($HasSu) {
+    Step "Remounting /system as writable"
+    foreach ($mp in @("/system", "/")) {
+        "mount -o rw,remount $mp" | & adb.exe shell su 0 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  Remounted $mp as writable."
+            $CanWriteSystem = $true
+            break
+        }
+    }
+    if (-not $CanWriteSystem) {
+        Write-Host "  Cannot remount system partition (dm-verity?) — falling back to user-app install." -ForegroundColor Yellow
+    }
+    Start-Sleep -Seconds 2
+}
+
+if ($CanWriteSystem) {
 
     # ── Install to priv-app ───────────────────────────────────────────────────
 
