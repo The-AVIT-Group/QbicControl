@@ -26,12 +26,19 @@ On the panel touchscreen:
 
 ## Step 3 — Connect and commission
 
-Plug the USB cable from your PC into the panel, then in PowerShell navigate to the
-folder containing the extracted files and run:
+Plug the USB cable from your PC into the panel, then open **Command Prompt** (cmd),
+navigate to the folder containing the extracted files, and run:
 
-```powershell
-.\commission_panel.ps1
+```cmd
+commission_panel.cmd
 ```
+
+> **PowerShell users:** Windows blocks downloaded scripts by default. Either use the
+> `.cmd` wrapper above, or unblock the script first then run it:
+> ```powershell
+> Unblock-File .\commission_panel.ps1
+> .\commission_panel.ps1
+> ```
 
 The script takes approximately 3 minutes and reboots the panel once. When it prints
 **"Commission complete"** the app is installed and running.
