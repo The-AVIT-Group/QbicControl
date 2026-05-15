@@ -1,0 +1,26 @@
+# Android build output
+*.apk
+*.aab
+*.ap_
+/build/
+/app/build/
+/captures/
+
+# Gradle
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+
+# Local config (machine-specific SDK path)
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+/out/
+
+# Keystore (never commit signing keys)
+*.jks
+*.keystore
