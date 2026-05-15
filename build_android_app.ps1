@@ -13,7 +13,7 @@ Push-Location $PSScriptRoot
 
 Pop-Location
 
-$src = "C:\Temp\qbic-android-build\app\outputs\apk\debug\app-debug.apk"
+$src = Join-Path $PSScriptRoot "app\build\outputs\apk\debug\app-debug.apk"
 $dst = Join-Path $PSScriptRoot "QbicControl.apk"
 Copy-Item -Path $src -Destination $dst -Force
 Write-Host "Build complete. APK copied to: $dst"

@@ -3,9 +3,6 @@ plugins {
   id("org.jetbrains.kotlin.android")
 }
 
-// Redirect build output outside OneDrive to avoid Windows Defender file-lock issues
-layout.buildDirectory.set(file("C:/Temp/qbic-android-build/app"))
-
 android {
   namespace = "au.com.theavitgroup.qbiccontrol"
   compileSdk = 34
