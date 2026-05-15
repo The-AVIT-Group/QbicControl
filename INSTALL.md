@@ -30,7 +30,7 @@ Plug the USB cable from your PC into the panel, then open **Command Prompt** (cm
 navigate to the folder containing the extracted files, and run:
 
 ```cmd
-commission_panel.cmd
+.\commission_panel.cmd
 ```
 
 > **PowerShell users:** Windows blocks downloaded scripts by default. Either use the
