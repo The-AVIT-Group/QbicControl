@@ -98,6 +98,30 @@ function Step {
     Write-Host "==> $Msg" -ForegroundColor Cyan
 }
 
+# Run a shell command as root — via direct adb shell (rooted adbd) or su 0 (production build).
+function SuShell {
+    param([string]$Cmd)
+    if ($script:IsRooted) {
+        & adb.exe shell $Cmd
+    } else {
+        $Cmd | & adb.exe shell su 0
+    }
+    if ($LASTEXITCODE -ne 0) { throw "su: $Cmd failed (exit $LASTEXITCODE)" }
+}
+
+# Push a local file to a /system path — directly (rooted) or via /sdcard staging (production build).
+function PushToSystem {
+    param([string]$Local, [string]$Remote)
+    if ($script:IsRooted) {
+        Adb "push",$Local,$Remote
+    } else {
+        $leaf = [System.IO.Path]::GetFileName($Local)
+        $tmp  = "/sdcard/$leaf"
+        Adb "push",$Local,$tmp
+        SuShell "cp $tmp $Remote && rm $tmp"
+    }
+}
+
 # ── Connect ──────────────────────────────────────────────────────────────────
 
 if ($DeviceIp) {
@@ -126,11 +150,21 @@ Write-Host "APK: $Apk"
 # ── Root + remount ────────────────────────────────────────────────────────────
 
 Step "Gaining root access"
-Adb "root"
-Start-Sleep -Seconds 3
+$rootOut = & adb root 2>&1
+$IsRooted = ($rootOut -notmatch "cannot run as root in production builds")
+if ($IsRooted) {
+    Write-Host "ADB running as root."
+    Start-Sleep -Seconds 3
+} else {
+    Write-Host "Production build — ADB root unavailable; using 'su 0' for privileged operations." -ForegroundColor Yellow
+}
 
-Step "Remounting /system as writable (overlayfs)"
-Adb "remount"
+Step "Remounting /system as writable"
+if ($IsRooted) {
+    Adb "remount"
+} else {
+    SuShell "mount -o rw,remount /system"
+}
 Start-Sleep -Seconds 2
 
 # ── Install to priv-app ───────────────────────────────────────────────────────
@@ -138,11 +172,11 @@ Start-Sleep -Seconds 2
 Step "Installing APK to /system/priv-app/"
 # Remove existing APK first — overlayfs needs free space for the new file;
 # leaving the old file in place can cause "No space left on device".
-Adb "shell","rm","-rf","/system/priv-app/QbicControl"
-Adb "shell","mkdir","-p","/system/priv-app/QbicControl"
-Adb "push",$Apk,$PrivAppDst
-Adb "shell","chmod","644",$PrivAppDst
-Adb "shell","chown","root:root",$PrivAppDst
+SuShell "rm -rf /system/priv-app/QbicControl"
+SuShell "mkdir -p /system/priv-app/QbicControl"
+PushToSystem $Apk $PrivAppDst
+SuShell "chmod 644 $PrivAppDst"
+SuShell "chown root:root $PrivAppDst"
 Write-Host "Installed: $PrivAppDst"
 
 # ── privapp-permissions XML ───────────────────────────────────────────────────
@@ -152,9 +186,9 @@ if (-not (Test-Path $PrivPermLocal)) {
     Write-Host "privapp-permissions-qbiccontrol.xml not found next to script: $PrivPermLocal" -ForegroundColor Red
     exit 1
 }
-Adb "push",$PrivPermLocal,$PrivPermDst
-Adb "shell","chmod","644",$PrivPermDst
-Adb "shell","chown","root:root",$PrivPermDst
+PushToSystem $PrivPermLocal $PrivPermDst
+SuShell "chmod 644 $PrivPermDst"
+SuShell "chown root:root $PrivPermDst"
 Write-Host "Written: $PrivPermDst"
 
 # ── sysconfig exceptions XML ──────────────────────────────────────────────────
@@ -164,9 +198,9 @@ if (-not (Test-Path $SysConfigLocal)) {
     Write-Host "qbiccontrol-permissions.xml not found next to script: $SysConfigLocal" -ForegroundColor Red
     exit 1
 }
-Adb "push",$SysConfigLocal,$SysConfigDst
-Adb "shell","chmod","644",$SysConfigDst
-Adb "shell","chown","root:root",$SysConfigDst
+PushToSystem $SysConfigLocal $SysConfigDst
+SuShell "chmod 644 $SysConfigDst"
+SuShell "chown root:root $SysConfigDst"
 Write-Host "Written: $SysConfigDst"
 
 # ── Clear device admin before reboot ─────────────────────────────────────────
