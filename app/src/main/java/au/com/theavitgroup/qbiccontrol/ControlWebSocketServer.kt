@@ -124,6 +124,7 @@ class ControlWebSocketServer(
   }
 
   override fun stop() {
+    handler.release()
     screenMonitor.stop()
     monitor.stop()
     browserMonitor.stop()

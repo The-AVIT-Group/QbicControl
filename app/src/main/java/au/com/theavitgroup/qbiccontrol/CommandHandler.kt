@@ -140,6 +140,8 @@ class CommandHandler(
     .put("error", msg)
     .toString()
 
+  fun release() = screen.release()
+
   companion object {
     private const val TAG = "CommandHandler"
   }

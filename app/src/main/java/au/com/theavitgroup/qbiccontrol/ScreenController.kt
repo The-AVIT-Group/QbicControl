@@ -10,15 +10,18 @@ class ScreenController(private val context: Context) {
 
   private val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
 
-  /** Wakes the screen. Requires WAKE_LOCK permission (normal, no special signing). */
+  @Suppress("DEPRECATION")
+  private var wakeLock: PowerManager.WakeLock? = null
+
+  /** Wakes the screen and holds it on until [sleep] or [release] is called. */
   fun wakeUp() {
+    if (wakeLock?.isHeld == true) return
     @Suppress("DEPRECATION")
-    val wl = powerManager.newWakeLock(
+    wakeLock = powerManager.newWakeLock(
       PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
-      "QbicControl:wakeup",
-    )
-    wl.acquire(2_000L)
-    Log.d(TAG, "Screen woken")
+      "QbicControl:screen_on",
+    ).also { it.acquire() }
+    Log.d(TAG, "Screen woken, wake lock held")
   }
 
   /**
@@ -32,6 +35,7 @@ class ScreenController(private val context: Context) {
    * crash the service.
    */
   fun sleep() {
+    releaseWakeLock()
     val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
     val admin = ComponentName(context, DeviceAdminReceiver::class.java)
     if (dpm.isAdminActive(admin)) {
@@ -42,6 +46,13 @@ class ScreenController(private val context: Context) {
         "Run: adb shell dpm set-active-admin " +
         "au.com.theavitgroup.qbiccontrol/.DeviceAdminReceiver")
     }
+  }
+
+  fun release() = releaseWakeLock()
+
+  private fun releaseWakeLock() {
+    wakeLock?.let { if (it.isHeld) it.release() }
+    wakeLock = null
   }
 
   companion object {

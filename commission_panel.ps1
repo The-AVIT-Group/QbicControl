@@ -145,24 +145,24 @@ if ($IsRooted) {
 
     Step "Remounting /system as writable"
     Adb "remount"
-    Start-Sleep -Seconds 2
+    Start-Sleep -Seconds 5
 
     # ── Preflight: remove any user-installed copy before pushing to priv-app ──
     # Android 12's PackageManagerService crashes on boot when it finds a signature
     # mismatch between the incoming priv-app and an existing /data/app entry — the
     # post-reboot uninstall step below can never run if the device boot-loops first.
     # Uninstall now, while PackageManager is healthy, to prevent this.
+    # Note: blind uninstall avoids 'adb shell pm path' which hangs when PackageManager
+    # is busy post-remount. adb uninstall returns non-zero if not installed — that's fine.
 
-    Step "Preflight: checking for existing user-installed copy"
-    $existingPath = & adb shell pm path $Package 2>$null
-    if ($existingPath -match "/data/app") {
-        Write-Host "User-installed copy found — uninstalling before priv-app install to prevent boot loop..." -ForegroundColor Yellow
-        # Clear device admin first; uninstall fails with INSTALL_FAILED_DEVICE_POLICY_MANAGER if active.
-        Adb "shell","rm","-f","/data/system/device_policies.xml"
-        Adb "uninstall",$Package
-        Write-Host "Uninstalled."
+    Step "Preflight: removing any user-installed copy"
+    # Clear device admin first; uninstall fails with INSTALL_FAILED_DEVICE_POLICY_MANAGER if active.
+    Adb "shell","rm","-f","/data/system/device_policies.xml"
+    & adb.exe uninstall $Package
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "User-installed copy removed."
     } else {
-        Write-Host "No user-installed copy — proceeding."
+        Write-Host "No user-installed copy found — proceeding."
     }
 
     # ── Install to priv-app ───────────────────────────────────────────────────
@@ -221,7 +221,7 @@ if ($IsRooted) {
     $booted = $false
     for ($i = 0; $i -lt 60; $i++) {
         Start-Sleep -Seconds 3
-        $val = & adb shell getprop sys.boot_completed 2>$null
+        $val = & adb shell getprop sys.boot_completed
         if ($val -match "1") { $booted = $true; break }
     }
     if (-not $booted) {
@@ -233,12 +233,10 @@ if ($IsRooted) {
 
     # ── Remove user-installed copy if it shadows the system version ───────────
 
-    Step "Checking for user-installed copy that would shadow system priv-app"
-    $pmPath = & adb shell pm path $Package 2>$null
-    if ($pmPath -match "/data/app") {
-        Write-Host "User-installed copy found — uninstalling to expose system version..." -ForegroundColor Yellow
-        Adb "uninstall",$Package
-        Write-Host "Uninstalled user copy."
+    Step "Removing any user-installed copy that would shadow system priv-app"
+    & adb.exe uninstall $Package
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "User-installed copy removed — system version now active."
 
         # Reboot so PackageManager scans priv-app cleanly and grants privapp permissions.
         Step "Rebooting to apply priv-app permission grants"
@@ -249,7 +247,7 @@ if ($IsRooted) {
         $booted = $false
         for ($i = 0; $i -lt 60; $i++) {
             Start-Sleep -Seconds 3
-            $val = & adb shell getprop sys.boot_completed 2>$null
+            $val = & adb shell getprop sys.boot_completed
             if ($val -match "1") { $booted = $true; break }
         }
         if (-not $booted) {
@@ -259,7 +257,7 @@ if ($IsRooted) {
         & adb root | Out-Null
         Start-Sleep -Seconds 2
     } else {
-        Write-Host "No user-installed copy found — system version is active."
+        Write-Host "No user-installed copy — system version is active."
     }
 
 } else {
