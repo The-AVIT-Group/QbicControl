@@ -8,7 +8,12 @@ import android.content.Intent
 class BootReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
     if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-      context.startForegroundService(Intent(context, QbicControlService::class.java))
+      // Android 14+ blocks camera-type FGS from background (BOOT_COMPLETED) for non-system apps.
+      // BootActivity presents a visible window first, satisfying the eligible-state requirement.
+      context.startActivity(
+        Intent(context, BootActivity::class.java)
+          .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      )
     }
   }
 }

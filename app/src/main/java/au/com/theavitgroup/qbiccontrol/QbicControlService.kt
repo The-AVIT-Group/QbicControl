@@ -22,10 +22,12 @@ class QbicControlService : Service() {
     super.onCreate()
     createNotificationChannel()
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      // CAMERA type omitted here: Android 14 blocks camera-type FGS from background contexts
+      // (boot receiver, auto-restart). CameraStreamServer + BootActivity handle camera access
+      // separately with a visible Activity to satisfy the MODE_FOREGROUND appops check.
       startForeground(
         NOTIFICATION_ID, buildNotification(),
-        ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA or
-          ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE,
+        ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE,
       )
     } else {
       startForeground(NOTIFICATION_ID, buildNotification())

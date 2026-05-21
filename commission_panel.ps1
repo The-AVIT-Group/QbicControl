@@ -294,6 +294,9 @@ Adb "shell","settings","put","secure","enabled_accessibility_services",
     "$Package/.ScreenCaptureService"
 Adb "shell","settings","put","secure","accessibility_enabled","1"
 
+Step "Keeping screen on while plugged in (control panel should never blank)"
+Adb "shell","settings","put","global","stay_on_while_plugged_in","7"
+
 # ── Token ─────────────────────────────────────────────────────────────────────
 
 if ($Token) {

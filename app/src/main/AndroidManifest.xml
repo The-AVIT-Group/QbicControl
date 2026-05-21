@@ -4,6 +4,8 @@
 
   <!-- Network -->
   <uses-permission android:name="android.permission.INTERNET" />
+  <!-- Required for FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE on API 34+ -->
+  <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
 
   <!-- Keep screen awake / wake screen on command -->
   <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -27,7 +29,6 @@
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
   <!-- Foreground service type declaration (required API 34+) -->
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
-  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
 
   <!-- Show notification for the foreground service (required API 33+) -->
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -72,7 +73,7 @@
     <service
       android:name=".QbicControlService"
       android:exported="true"
-      android:foregroundServiceType="connectedDevice|camera" />
+      android:foregroundServiceType="connectedDevice" />
 
     <!-- Auto-start on boot -->
     <receiver
