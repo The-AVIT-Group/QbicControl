@@ -2,6 +2,7 @@ package au.com.theavitgroup.qbiccontrol
 
 import android.content.Context
 import android.os.PowerManager
+import android.provider.Settings
 import android.util.Log
 
 class ScreenController(private val context: Context) {
@@ -17,13 +18,26 @@ class ScreenController(private val context: Context) {
    * the panel firmware's native sleep.
    */
   fun wakeUp() {
+    // Force brightness to maximum first. The Qbic firmware manages the hardware
+    // backlight directly (dims to ~5% as its sleep mode). ACQUIRE_CAUSES_WAKEUP
+    // alone does not restore it because mStayOn keeps Android's display state as
+    // ON — there is no OFF→ON transition for the firmware to react to.
+    try {
+      Settings.System.putInt(
+        context.contentResolver,
+        Settings.System.SCREEN_BRIGHTNESS,
+        255,
+      )
+    } catch (e: Exception) {
+      Log.w(TAG, "Could not set brightness: ${e.message}")
+    }
     if (wakeLock?.isHeld == true) return
     @Suppress("DEPRECATION")
     wakeLock = powerManager.newWakeLock(
       PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
       "QbicControl:screen_on",
     ).also { it.acquire() }
-    Log.d(TAG, "Screen woken, wake lock held")
+    Log.d(TAG, "Screen woken, brightness restored, wake lock held")
   }
 
   /**

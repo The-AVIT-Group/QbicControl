@@ -10,6 +10,12 @@
   <!-- Keep screen awake / wake screen on command -->
   <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+  <!-- Write display brightness — used in wakeUp() to force hardware backlight to 255,
+       overriding the Qbic firmware's brightness-based sleep (which Android's wake-lock
+       ACQUIRE_CAUSES_WAKEUP does not override because mStayOn keeps the display "ON").
+       Declared in privapp-permissions-qbiccontrol.xml; granted automatically to priv-apps. -->
+  <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+
   <!-- Auto-start after reboot -->
   <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
