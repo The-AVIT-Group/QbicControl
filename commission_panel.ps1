@@ -286,6 +286,9 @@ Adb "shell","pm","grant",$Package,"android.permission.WRITE_SECURE_SETTINGS"
 Step "Setting SYSTEM_ALERT_WINDOW appops to allow"
 Adb "shell","appops","set",$Package,"SYSTEM_ALERT_WINDOW","allow"
 
+Step "Granting WRITE_SETTINGS appops (required to restore hardware brightness on wake)"
+Adb "shell","appops","set",$Package,"android:write_settings","allow"
+
 Step "Granting GET_USAGE_STATS appops (required for browser foreground detection)"
 Adb "shell","appops","set",$Package,"GET_USAGE_STATS","allow"
 
