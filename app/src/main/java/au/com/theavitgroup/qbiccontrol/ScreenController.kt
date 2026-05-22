@@ -1,7 +1,5 @@
 package au.com.theavitgroup.qbiccontrol
 
-import android.app.admin.DevicePolicyManager
-import android.content.ComponentName
 import android.content.Context
 import android.os.PowerManager
 import android.util.Log
@@ -13,7 +11,11 @@ class ScreenController(private val context: Context) {
   @Suppress("DEPRECATION")
   private var wakeLock: PowerManager.WakeLock? = null
 
-  /** Wakes the screen and holds it on until [sleep] or [release] is called. */
+  /**
+   * Wakes the screen and holds it at full brightness until [sleep] or [release] is called.
+   * ACQUIRE_CAUSES_WAKEUP turns the display on even if it is currently off or dimmed by
+   * the panel firmware's native sleep.
+   */
   fun wakeUp() {
     if (wakeLock?.isHeld == true) return
     @Suppress("DEPRECATION")
@@ -25,27 +27,16 @@ class ScreenController(private val context: Context) {
   }
 
   /**
-   * Puts the screen to sleep via DevicePolicyManager.lockNow().
+   * Releases the screen wake lock so the panel's native display management resumes —
+   * the display will dim and eventually sleep on its own schedule.
    *
-   * Requires device admin to be activated once after install:
-   *   adb shell dpm set-active-admin \
-   *       au.com.theavitgroup.qbiccontrol/.DeviceAdminReceiver
-   *
-   * Without device admin this logs a warning and does nothing — it will not
-   * crash the service.
+   * Does NOT call DevicePolicyManager.lockNow(): that creates a keyguard that cannot
+   * be dismissed programmatically, leaving the panel permanently blank until rebooted.
+   * It also breaks the panel firmware's own brightness-based sleep/wake cycle.
    */
   fun sleep() {
     releaseWakeLock()
-    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-    val admin = ComponentName(context, DeviceAdminReceiver::class.java)
-    if (dpm.isAdminActive(admin)) {
-      dpm.lockNow()
-      Log.d(TAG, "Screen locked via DevicePolicyManager")
-    } else {
-      Log.w(TAG, "Screen sleep skipped — device admin not active. " +
-        "Run: adb shell dpm set-active-admin " +
-        "au.com.theavitgroup.qbiccontrol/.DeviceAdminReceiver")
-    }
+    Log.d(TAG, "Screen wake lock released — display follows native power management")
   }
 
   fun release() = releaseWakeLock()

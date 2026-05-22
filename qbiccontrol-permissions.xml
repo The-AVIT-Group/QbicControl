@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<exceptions>
-  <exception package="au.com.theavitgroup.qbiccontrol">
-    <permission name="android.permission.CAMERA" fixed="false"/>
-  </exception>
-</exceptions>
+<config>
+  <allow-in-power-save package="au.com.theavitgroup.qbiccontrol" />
+  <allow-in-data-usage-save package="au.com.theavitgroup.qbiccontrol" />
+</config>

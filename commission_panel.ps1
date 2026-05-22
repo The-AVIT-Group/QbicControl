@@ -10,7 +10,8 @@
 #      caused by PackageManagerService crashing on signature mismatch)
 #   5. Reboots and waits for the device to come back online
 #   6. Removes any remaining user-installed copy that would shadow the system version (safety net)
-#   7. Grants CAMERA, WRITE_SECURE_SETTINGS, SYSTEM_ALERT_WINDOW, GET_USAGE_STATS, and device admin
+#   7. Grants CAMERA, WRITE_SECURE_SETTINGS, SYSTEM_ALERT_WINDOW, and GET_USAGE_STATS
+#   8. Sets stay_on_while_plugged_in=7 so the Qbic firmware can manage dim/sleep
 #
 # Usage:
 #   .\commission_panel.ps1                                          # USB, auto-generated token
@@ -213,22 +214,23 @@ if ($IsRooted) {
     # ── Reboot ────────────────────────────────────────────────────────────────
 
     Step "Rebooting device"
-    & adb reboot
+    & adb.exe reboot
     Write-Host "Waiting for device to come back online..."
-    & adb wait-for-device
+    & adb.exe wait-for-device
+    Start-Sleep -Seconds 10  # let adbd fully start before polling
 
     Write-Host "Waiting for boot to complete..."
     $booted = $false
     for ($i = 0; $i -lt 60; $i++) {
         Start-Sleep -Seconds 3
-        $val = & adb shell getprop sys.boot_completed
-        if ($val -match "1") { $booted = $true; break }
+        $val = [string](& adb.exe shell getprop sys.boot_completed)
+        if ($val.Trim() -eq "1") { $booted = $true; break }
     }
     if (-not $booted) {
         Write-Host "Boot timed out — continuing anyway, some steps may fail." -ForegroundColor Yellow
     }
     Start-Sleep -Seconds 5
-    & adb root | Out-Null
+    & adb.exe root | Out-Null
     Start-Sleep -Seconds 2
 
     # ── Remove user-installed copy if it shadows the system version ───────────
@@ -240,21 +242,22 @@ if ($IsRooted) {
 
         # Reboot so PackageManager scans priv-app cleanly and grants privapp permissions.
         Step "Rebooting to apply priv-app permission grants"
-        & adb reboot
+        & adb.exe reboot
         Write-Host "Waiting for device to come back online..."
-        & adb wait-for-device
+        & adb.exe wait-for-device
+        Start-Sleep -Seconds 10  # let adbd fully start before polling
         Write-Host "Waiting for boot to complete..."
         $booted = $false
         for ($i = 0; $i -lt 60; $i++) {
             Start-Sleep -Seconds 3
-            $val = & adb shell getprop sys.boot_completed
-            if ($val -match "1") { $booted = $true; break }
+            $val = [string](& adb.exe shell getprop sys.boot_completed)
+            if ($val.Trim() -eq "1") { $booted = $true; break }
         }
         if (-not $booted) {
             Write-Host "Boot timed out — continuing anyway." -ForegroundColor Yellow
         }
         Start-Sleep -Seconds 5
-        & adb root | Out-Null
+        & adb.exe root | Out-Null
         Start-Sleep -Seconds 2
     } else {
         Write-Host "No user-installed copy — system version is active."
@@ -280,9 +283,6 @@ Adb "shell","pm","grant",$Package,"android.permission.CAMERA"
 Step "Granting WRITE_SECURE_SETTINGS permission"
 Adb "shell","pm","grant",$Package,"android.permission.WRITE_SECURE_SETTINGS"
 
-Step "Registering device admin"
-Adb "shell","dpm","set-active-admin",$AdminComp
-
 Step "Setting SYSTEM_ALERT_WINDOW appops to allow"
 Adb "shell","appops","set",$Package,"SYSTEM_ALERT_WINDOW","allow"
 
@@ -294,7 +294,10 @@ Adb "shell","settings","put","secure","enabled_accessibility_services",
     "$Package/.ScreenCaptureService"
 Adb "shell","settings","put","secure","accessibility_enabled","1"
 
-Step "Keeping screen on while plugged in (control panel should never blank)"
+# Keep the display on while powered — the Qbic firmware manages dim/sleep via
+# brightness control and requires mStayOn=true to prevent Android from putting
+# the display into full OFF state (which the Qbic launcher cannot wake from).
+Step "Keeping screen on while plugged in"
 Adb "shell","settings","put","global","stay_on_while_plugged_in","7"
 
 # ── Token ─────────────────────────────────────────────────────────────────────
