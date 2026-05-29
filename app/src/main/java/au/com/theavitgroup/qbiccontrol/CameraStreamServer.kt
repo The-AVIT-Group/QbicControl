@@ -127,7 +127,7 @@ class CameraStreamServer(private val context: Context, private val port: Int) {
             return
         }
 
-        val reader = ImageReader.newInstance(640, 480, ImageFormat.JPEG, 2).also {
+        val reader = ImageReader.newInstance(320, 240, ImageFormat.JPEG, 2).also {
             imageReader = it
         }
         reader.setOnImageAvailableListener({ ir ->

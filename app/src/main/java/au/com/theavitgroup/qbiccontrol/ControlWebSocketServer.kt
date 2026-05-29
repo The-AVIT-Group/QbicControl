@@ -57,6 +57,10 @@ class ControlWebSocketServer(
     Log.d(TAG, "Broadcasting browser state=$isOpen to ${clients.size} clients")
     sendToAll("""{"ok":true,"browser":$isOpen}""")
   }
+  private val backlightMonitor = BacklightMonitor { pct ->
+    Log.d(TAG, "Broadcasting backlight=$pct to ${clients.size} clients")
+    sendToAll("""{"ok":true,"backlight":$pct}""")
+  }
 
   init {
     isReuseAddr = true
@@ -117,6 +121,7 @@ class ControlWebSocketServer(
     connectionLostTimeout = 60  // ping every 60 s
     monitor.start()
     browserMonitor.start()
+    backlightMonitor.start()
   }
 
   fun updateToken(newToken: String) {
@@ -128,6 +133,7 @@ class ControlWebSocketServer(
     screenMonitor.stop()
     monitor.stop()
     browserMonitor.stop()
+    backlightMonitor.stop()
     super.stop()
   }
 

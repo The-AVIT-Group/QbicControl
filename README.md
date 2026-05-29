@@ -5,7 +5,7 @@ Exposes ambient light and proximity sensors, MJPEG camera streaming, camera
 privacy LED control, and browser foreground monitoring via WebSocket (port 9090)
 and HTTP (port 9091).
 
-> **Tested on:** QBIC TD-1070, firmware v2.12.4, Android 12.
+> **Tested on:** QBIC TD-1070, firmware v3.14.2, Android 14 (API 34).
 
 **Package:** `au.com.theavitgroup.qbiccontrol`
 
@@ -43,8 +43,8 @@ auto-starts after every reboot.
 | --- | --- |
 | **Panel** | QBIC SmartPanel (tested on TD-1070) |
 | **SoC** | Rockchip RK3566 |
-| **OS** | Android 12 (userdebug — `su` available) |
-| **Firmware** | v2.12.4 |
+| **OS** | Android 14 API 34 (userdebug — `su` available) |
+| **Firmware** | v3.14.2 (built 2026-04-23) |
 | **Camera** | OV8856 (front-facing, 640×480 JPEG capture) |
 
 ### Sensors
