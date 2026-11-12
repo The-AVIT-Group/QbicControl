@@ -133,7 +133,10 @@ On the panel:
 
 ### ADB connect
 
+Connect to the panel over TCP (replace with the panel's IP address):
+
 ```bash
+adb connect 192.168.1.100:5555
 adb devices
 ```
 
